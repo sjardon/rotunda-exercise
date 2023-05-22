@@ -1,10 +1,23 @@
 import { ENUM_ANIMAL_TYPES } from "./animals/constants/animal-type.enum.constant";
 import { AnimalFactory } from "./factories/animal.factory";
 
-const [animalType, phrase] = process.argv.slice(2);
+function run() {
+  const [animalType, phrase] = process.argv.slice(2);
 
-const animalFactory = new AnimalFactory();
+  if (!animalType || !phrase) {
+    console.log("Please, send {animalType} {someMessage}");
+    return;
+  }
 
-const animal = animalFactory.createByType(animalType as ENUM_ANIMAL_TYPES);
+  try {
+    const animalFactory = new AnimalFactory();
+    const animal = animalFactory.createByType(animalType as ENUM_ANIMAL_TYPES);
+    console.log(animal.speak(phrase));
+  } catch (error) {
+    console.log(error.message);
+  }
 
-console.log(animal.speak(phrase));
+  return;
+}
+
+run();
