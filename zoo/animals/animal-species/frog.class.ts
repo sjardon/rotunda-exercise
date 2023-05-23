@@ -1,8 +1,8 @@
 import { AbstractAnimalSpecies } from "./animal-species.abstract";
 
-export class Lion extends AbstractAnimalSpecies {
+export class Frog extends AbstractAnimalSpecies {
   constructor() {
     super();
-    this.animalSound = "roar";
+    this.animalSound = "ribbit";
   }
 }
