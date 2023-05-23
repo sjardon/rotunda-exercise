@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start:zoo": "tsc && node dist/zoo/index.js",
-    "start:urlp": "tsc && node dist/url-parser/index.js",
+    "start:url-parser": "tsc && node dist/url-parser/index.js",
     "start": "tsc && node dist/index.js",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"

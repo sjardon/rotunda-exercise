@@ -3,12 +3,12 @@ import { UrlParser } from "./libs/url-parser";
 function run() {
   const urlParser = new UrlParser();
 
+  const urlSchema = "/:version/api/:collection/:id";
+  const urlInstance = "/6/api/listings/3?sort=desc&limit=10";
+
   console.log(
-    "Testing url instance [/6/api/listings/3?sort=desc&limit=10] for url schema [/:version/api/:collection/:id]",
-    urlParser.parse(
-      "/:version/api/:collection/:id",
-      "/6/api/listings/3?sort=desc&limit=10"
-    )
+    `Testing url instance [${urlInstance}] for url schema [${urlSchema}]`,
+    urlParser.parse(urlSchema, urlInstance)
   );
 }
 
