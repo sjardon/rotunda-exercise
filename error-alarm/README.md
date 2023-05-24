@@ -3,7 +3,8 @@
 ## Introduction
 
 We need a new alarm service that notify different error events. We are not concerned about these errors when their frequency is low. However, when lots of errors occur in a short period of time, there may be a problem with the application and we want to be notified immediately.
-The solution will involve the current logging service but isolating it with a new alerts layer. That allow us to abstract the alerts from the logging, so will be easy to add new kinds of alerts in the future.
+
+The solution will include the current logging logic but isolating it with a new alerts service. That allow us to abstract the alerts from the logging, so will be easy to add new kinds of alerts in the future.
 
 ## Goals
 
@@ -28,11 +29,11 @@ We can check that structure in this diagram:
 
 ### DataSource
 
-`DataSource` interface should have several methods that allow to each component get its needed information. In this way we can abstract where this information come and get a common type for the next process instances.
+`DataSource` interface should have several methods that allow to `Signal` component get its needed information. In this way we can abstract where this information come and get a common type for the next process instances.
 
-The sourcing process start getting the new line from the log source and aggregating it to some cache. The internal cache has only the most recent rows, getting rid the oldest ones.
+The sourcing process start getting the new log line from the log source and aggregating it to some cache. The internal cache has only the most recent rows, getting rid the oldest ones.
 
-In our case, we can connect `ErrorAlarm` to our log file adding a new `TextFile` data source. We only should set the path and the log line schema to connect the source to our `ErrorAlarm` service.
+In our case, we can connect `ErrorAlarm` to our log text file adding a new `TextFile` data source. We only need to set the path and the log line schema to connect the source to our `ErrorAlarm` service.
 
 ```ts
 interface DataSource {
@@ -59,7 +60,7 @@ class LogRow {
 
 ### Signal
 
-`Signal` has the ability to make different operations (logical comparations, text search, count rows, etc) over any dataset provided by the `DataSource` interface.The final result is boolean that indicates if the validation check the signal or not. Probably we can break this class in several parts to get the needed info, transform and use it from the `DataSource`.
+`Signal` has the ability to make different operations (logical comparations, text search, count rows, etc) over any dataset provided by the `DataSource` interface. The final result is a boolean that indicates if the validation check the signal or not. Probably we can break this class in several parts to get the needed info, transform and use it from the `DataSource`.
 
 ```ts
 class Signal {
@@ -88,11 +89,11 @@ class CountElements implements Operator<LogRow[], number> {
 }
 ```
 
-To check if more than ten errors occur in one minute we can make use of the `DataSource.getSince` method and check the total `LogRow` elements are more than ten with the CountElements operator.
+To check if more than ten errors occur in one minute we can use the `DataSource.getSince` method and check if the total `LogRow` elements are more than ten with the `CountElements` operator and some other `Greater` operator for the comparison logic.
 
 ### Notificator
 
-`Notificator` interface allow us to send notifications if the `Signal` class confirm the test. We can specify different rules of when send messages with the `NotificatorRule` class. `Notificator` will save in cache the sended `Notification` to validate each `NotificatorRule`.
+`Notificator` interface allow us to send notifications if the `Signal` class confirm the test. We can specify different rules of when send messages with the `NotificatorRule` class. `Notificator` will save in cache the sended `Notification` for futures usages.
 
 To send our notifications by email we only need to add an `EmailMethod` to the `Notificator`.
 
@@ -134,13 +135,13 @@ class Notification {
 
 ### ErrorAlarm
 
-As I told above, `ErrorAlarm` has the responsavility of orchestate the differents components. This involves:
+As I told above, the `ErrorAlarm` responsavility is orchestate the differents components. This involves:
 
 1. Instantiate every component, probably making usage of some factories.
 2. Run a cron job to start the process or run every check whithin each `logError` call.
 3. Run `Signal.test` and fire the `Notificator.notify` if it is `true`.
 
-To initialize `ErrorAlarm` we should set all needed configuration in some part of our system.
+To initialize `ErrorAlarm` we should set all needed configuration in the bootstrap process of our system.
 
 ## References
 
