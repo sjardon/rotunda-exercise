@@ -1,11 +1,11 @@
-# Error Alarm
+# ErrorAlarm
 
 ## Introduction
 
 We need a new alarm service that notify different error events. We are not concerned about these errors when their frequency is low. However, when lots of errors occur in a short period of time, there may be a problem with the application and we want to be notified immediately.
-The solution will involve the current logging service but adding a new alerts layer. That allow us to abstract the alerts from the logging, so will be easy to add new kinds of alerts in the future.
+The solution will involve the current logging service but isolating it with a new alerts layer. That allow us to abstract the alerts from the logging, so will be easy to add new kinds of alerts in the future.
 
-## Goals [or Motivating Use Cases, or Scenarios]
+## Goals
 
 The final solution must guarantee:
 
@@ -15,14 +15,14 @@ The final solution must guarantee:
 
 ## ErorAlarm Service
 
-To achieve our goals I designed `Error Alarm` service. It's an isolated service that delegate in more granular tasks the general purpose. At least, we need to:
+To achieve our goals I designed `ErrorAlarm` service. It's an isolated service that delegate in more granular tasks the general purpose. At least, we need to:
 
 1.  Get logged data
 2.  Validate some signals from it
 3.  Send notifications if it's needed.
 4.  Orchestate all this flow
 
-We can check that structure is represented in this diagram:
+We can check that structure in this diagram:
 
 ![ErrorAlarmService class diagram](error-alarm-class-diagram.jpg)
 
@@ -62,6 +62,15 @@ class LogRow {
 `Signal` has the ability to make different operations (logical comparations, text search, count rows, etc) over any dataset provided by the `DataSource` interface.The final result is boolean that indicates if the validation check the signal or not. Probably we can break this class in several parts to get the needed info, transform and use it from the `DataSource`.
 
 ```ts
+class Signal {
+  constructor(private dataSource: DataSource, private operators: Operator) {}
+
+  async test(): Promise<boolean> {
+    // Here we should make use of dataSource to get the needed log rows
+    // and bring them to the operators functions that will validate the the signal.
+  }
+}
+
 interface Operator<T, R> {
   // I got this Operator interface from an old personal project.
   values: T;
@@ -77,17 +86,62 @@ class CountElements implements Operator<LogRow[], number> {
     return this.values.length;
   }
 }
-
-class Signal {
-  constructor(private dataSource: DataSource, private operators: Operator) {}
-
-  async test(): Promise<boolean> {
-    // Here we should make use of dataSource to get the needed log rows
-    // and bring them to the operators functions that will validate the the signal.
-  }
-}
 ```
 
 To check if more than ten errors occur in one minute we can make use of the `DataSource.getSince` method and check the total `LogRow` elements are more than ten with the CountElements operator.
 
-## Notificator
+### Notificator
+
+`Notificator` interface allow us to send notifications if the `Signal` class confirm the test. We can specify different rules of when send messages with the `NotificatorRule` class. `Notificator` will save in cache the sended `Notification` to validate each `NotificatorRule`.
+
+To send our notifications by email we only need to add an `EmailMethod` to the `Notificator`.
+
+```ts
+class Notificator {
+  constructor(
+    private rules: NotificatorRule[],
+    private methods: NotificatorMethod[]
+  ) {}
+
+  async notify(): Promise<boolean> {
+    for (let rule of this.rules) {
+      if (!(await rule.validate())) {
+        return false;
+      }
+    }
+
+    for (let method of this.methods) {
+      const notification = method.notify();
+      // save the notification
+    }
+
+    // if does not throw any error return true...
+  }
+}
+
+interface NotificatorRule {
+  validate(): Promise<boolean>;
+}
+
+interface NotificatorMethod {
+  notify(): Promise<Notification>;
+}
+
+class Notification {
+  // Here properties and methods that the sended message needs like status, etc.
+}
+```
+
+### ErrorAlarm
+
+As I told above, `ErrorAlarm` has the responsavility of orchestate the differents components. This involves:
+
+1. Instantiate every component, probably making usage of some factories.
+2. Run a cron job to start the process or run every check whithin each `logError` call.
+3. Run `Signal.test` and fire the `Notificator.notify` if it is `true`.
+
+To initialize `ErrorAlarm` we should set all needed configuration in some part of our system.
+
+## References
+
+I got inspiration from [this diagram](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/media/alerts-overview/alerts.png) from [Azure Monitor alerts](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview) and, regarding the notification signals, I got some ideas from [my personal trading bot project](https://github.com/sjardon/sj-trading).
