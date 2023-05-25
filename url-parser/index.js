@@ -1,4 +1,4 @@
-import { UrlParser } from "./libs/url-parser";
+const { UrlParser } = require("./libs/url-parser");
 
 function run() {
   const urlParser = new UrlParser();

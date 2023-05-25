@@ -1,21 +1,13 @@
-export type UrlParserOptions = {
-  variableIndicator?: string;
-};
+class UrlParser {
+  variableIndicator;
 
-export type UrlParameters = {
-  [key: string]: string | number | boolean;
-};
-
-export class UrlParser {
-  private variableIndicator: string;
-
-  constructor(options: UrlParserOptions = {}) {
+  constructor(options = {}) {
     const { variableIndicator } = options;
     this.variableIndicator = variableIndicator || ":";
   }
 
-  parse(schema: string, urlInstance: string): UrlParameters {
-    let parsedUrlParams: UrlParameters = {};
+  parse(schema, urlInstance) {
+    let parsedUrlParams = {};
 
     const [path, queryParams] = urlInstance.split("?");
 
@@ -32,7 +24,7 @@ export class UrlParser {
     return parsedUrlParams;
   }
 
-  protected getParsedPath(schema: string, path: string): UrlParameters {
+  getParsedPath(schema, path) {
     const parsedPathParams = {};
     const pathParts = path.split("/");
 
@@ -49,7 +41,7 @@ export class UrlParser {
     return parsedPathParams;
   }
 
-  protected getParsedQueryParams(queryParams: string): UrlParameters {
+  getParsedQueryParams(queryParams) {
     // TODO: handle query params arrays.
 
     const parsedQueryParams = queryParams
@@ -59,11 +51,13 @@ export class UrlParser {
     return Object.fromEntries(parsedQueryParams);
   }
 
-  protected isVariable(schemaPart: string): boolean {
+  isVariable(schemaPart) {
     return schemaPart.startsWith(this.variableIndicator);
   }
 
-  protected getUrlParamKey(schemaPart: string) {
+  getUrlParamKey(schemaPart) {
     return schemaPart.substring(schemaPart.indexOf(this.variableIndicator) + 1);
   }
 }
+
+module.exports = { UrlParser };
